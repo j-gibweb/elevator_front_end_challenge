@@ -103,8 +103,6 @@
   </style>
   
   <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-  <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
-
   <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery-scrollTo/1.4.3/jquery.scrollTo.min.js"></script>
   
   <script type="text/javascript">
@@ -117,29 +115,15 @@
       this.queue = [];
     }
 
-    Elevator.prototype.addToElevatorQueue = function(event) {
-      var floor = Number(this.innerText);
-      var button = $(this)
-
-      // if elevator queue does not contain the floor number "pushed"
-      if ($.inArray(floor, elevator.queue) == -1) {
-        // push floor into the queue if it's not in the queue  
-        elevator.queue.push(floor);
-        // add glow class to floor numbers, yet to be visited
-        button.toggleClass('glow');
-      }
-
-    };
-
     Elevator.prototype.move = function(indicator) {
       
       // indicate which direction elevator is traveling
       $(indicator).animate({opacity:1}, 500);
       
       // travel time should take 2 seconds per floor
-      var travelTime = Math.abs(elevator.currentFloor - elevator.currentTarget) * 1000;
+      var travelTime = Math.abs(this.currentFloor - this.currentTarget) * 2000;
 
-      $.scrollTo('#floor' + elevator.currentTarget, travelTime, 'easeInOutQuint');
+      $.scrollTo('#floor' + elevator.currentTarget, travelTime, 'easeInExpo');
 
       // Make changes to all relevant objects upon "arrival"
       setTimeout(function() {
@@ -147,53 +131,85 @@
         // indicate elevator has stopped moving
         $(indicator).animate({opacity:0}, 500);
 
-        // set the current floor to the target floor // "we've arrived!"
-        elevator.currentFloor = elevator.currentTarget;
+        // set the currentFloor to the currentTarget // "we've arrived!"
+        this.currentFloor = this.currentTarget;
 
         // reflect current floor change in the DOM
         $('#floor-number').fadeOut(500, function() {
-          $('#floor-number').html(elevator.currentFloor).fadeIn(500);  
-        });
+          $('#floor-number').html(this.currentFloor).fadeIn(500);  
+        }.bind(this));
 
         // remove glow class from elevator button
-        $('#floor-'+ elevator.currentTarget).toggleClass('glow');
+        $('#floor-'+ this.currentTarget).toggleClass('glow');
 
         // reset current target to null
-        elevator.currentTarget = null;
+        this.currentTarget = null;
 
-        console.log( "We've arrived at floor " + elevator.currentFloor)
-      }, travelTime)
+        console.log( "We've arrived at floor " + this.currentFloor);
+
+        // bind the elevator object to 'this'
+      }.bind(this), travelTime)
+
     };
     
+    var addToElevatorQueue = function(event) {
+      var floor = Number(this.innerText);
+      var button = $(this)
+      var targetElevator = event.data;
+
+      // if elevator queue does not contain the floor number "pushed"
+      // push it into elevator.queue
+      if ($.inArray(floor, targetElevator.queue) == -1) {
+
+        targetElevator.queue.push(floor);
+
+        // add glow class to buttons pushed
+        button.toggleClass('glow');
+      }
+    };
 
 
     var elevator = new Elevator();
-    $('.floor-select-button').on('click', elevator.addToElevatorQueue);
-    $.scrollTo('#floor1', 500, 'easeInOutQuint');
+
+    // pass elevator object to handler function for modularity
+    $('.floor-select-button').on('click', elevator, addToElevatorQueue);
+
+    // initiate the elevator on the "bottom" / first floor
+    $.scrollTo('#floor1', 500, 'easeInExpo');
 
 
-    // constantly scan to see if there is a new destination the elvator can travel to
+
+
+    // 10 times a second, 
+    // scan to see if there is a new destination 
+    // the elvator can travel to
     setInterval(function() {
-      
-      // if there are any new destinations in the elevator queue
-      // and the elevator does not currently have a target it's moving to
-      if (elevator.queue.length && elevator.currentTarget === null) {
-        // splice off the 0th index of the elevator.queue
-        elevator.currentTarget = elevator.queue.splice(0,1)[0];
-        // if the target is "above" the current floor
-        if (elevator.currentTarget > elevator.currentFloor) {
-          // pass that indicator to elevator.move()
-          elevator.move('#up-indicator');
 
-        } else {
+      // if there are any new destinations in the elevator.queue
+      // and the elevator does not currently have a target it's moving to
+      if (this.queue.length && this.currentTarget === null) {
+        
+        // splice off the 0th index of the this.queue
+        this.currentTarget = this.queue.splice(0,1)[0];
+        
+        // if the target is "above" the current floor
+        if (this.currentTarget > this.currentFloor) {
           
-          elevator.move('#down-indicator');          
+          // pass that indicator's css ID to Elevator.prototype.move()
+          this.move('#up-indicator');
+
+        // if the target is "below" the current floor
+        } else {
+          // pass the ID
+          this.move('#down-indicator');          
         }
 
-        console.log( "We're now headed to the floor number " + elevator.currentTarget)
+        console.log( "We're now headed to the floor number " + this.currentTarget)
+
       }
 
-    }, 100)
+    // bind globally initialized var elevator to 'this'
+    }.bind(elevator), 100)
 
 
 
