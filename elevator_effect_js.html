@@ -1,12 +1,9 @@
 <html>
 <head>
   <title>front end challenge</title>
-
   <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
   <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery-scrollTo/1.4.3/jquery.scrollTo.min.js"></script>
-  
   <script type="text/javascript">
-
 
   $(function() {
 
@@ -15,6 +12,9 @@
       this.targetFloor = null;
       this.targetButton = null;
       this.queue = [];
+
+      // pass elevator object to handler function 
+      $('.floor-select-button').on('click', this, this.addToElevatorQueue);
     }
 
     Elevator.prototype.move = function(indicator) {
@@ -45,21 +45,22 @@
         // remove glow class from elevator button
         this.targetButton.removeClass('glow');
 
-        // reset current target to null
         this.targetFloor = null;
 
         // re-apply click listener to 'that' button
-        this.targetButton.on('click', elevator, addToElevatorQueue);
+        this.targetButton.on('click', elevator, this.addToElevatorQueue);
+        
+        // check to see if there are any floors still waiting to be visited
+        this.checkQueue();
 
         // bind the elevator object to 'this'
-      }.bind(this), travelTime)
+      }.bind(this), travelTime);
+
 
     };
-    
 
+    Elevator.prototype.addToElevatorQueue = function(event) {
 
-    var addToElevatorQueue = function(event) {
-      
       var targetElevator = event.data;
       
       var button = $(this);
@@ -71,28 +72,14 @@
       button.addClass('glow');
 
       // remove click listener from 'this' button
-      $(button).off('click')
-    
+      $(button).off('click');
+      
+      // check to see if there are any floors still waiting to be visited
+      targetElevator.checkQueue();
     };
 
-
-    var elevator = new Elevator();
-
-    // pass elevator object to handler function 
-    $('.floor-select-button').on('click', elevator, addToElevatorQueue);
-
-    // initiate the elevator on the "bottom" / first floor
-    $.scrollTo('#floor1', 500, 'easeInExpo');
-
-
-
-    // 10 times a second, 
-    // scan to see if there is a new destination 
-    // the elvator can travel to
-    setInterval(function() {
-
-      // if there are any new destinations in the elevator.queue
-      // and the elevator does not currently have a target it's moving to
+    Elevator.prototype.checkQueue = function() {
+      
       if (this.queue.length && this.targetFloor === null) {
         
         // splice off the 0th index of the this.queue
@@ -114,17 +101,16 @@
         }
 
       }
+    };
 
-    // bind globally initialized var elevator to 'this'
-    }.bind(elevator), 100)
+    var elevator = new Elevator();
 
-  })
+    // initiate the elevator on the "bottom" / first floor
+    $.scrollTo('#floor1', 500, 'easeInExpo');
+
+
+  });
   </script>
-
-
-
-
-
 
   <style type="text/css">
 
@@ -226,28 +212,28 @@
 
   </style>
 </head>
-
 <body>
 
-  <div id="panel">
-    <div id="screen">
+  <section id="floor4" class="level" style="background-color: #C1D9D4;">4</section>
+  <section id="floor3" class="level" style="background-color: #609FA6;">3</section>
+  <section id="floor2" class="level" style="background-color: #4C6C73;">2</section>
+  <section id="floor1" class="level" style="background-color: #456173;">1</section>  
+
+  <section id="panel">
+    <header id="screen">
       <div id="floor-number">1</div>
       <div id="indicators">
         <div id="up-indicator" class="indicator"></div>
         <div id="down-indicator" class="indicator"></div>
       </div>
-    </div>
-    <div id="controls">
+    </header>
+    <nav id="controls">
       <button class="floor-select-button">3</button>  
       <button class="floor-select-button">4</button>  
       <button class="floor-select-button">1</button>  
       <button class="floor-select-button">2</button>  
-    </div>
-  </div>
+    </nav>
+  </section>
 
-  <div id="floor4" class="level" style="background-color: #C1D9D4;">4</div>
-  <div id="floor3" class="level" style="background-color: #609FA6;">3</div>
-  <div id="floor2" class="level" style="background-color: #4C6C73;">2</div>
-  <div id="floor1" class="level" style="background-color: #456173;">1</div>  
 </body>
 </html>
